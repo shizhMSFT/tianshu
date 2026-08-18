@@ -54,7 +54,7 @@ function shell(content, progress = null) {
   return `<div class="shell">
     <header class="topbar">
       <div><p class="eyebrow">Knowledge Study</p><h1>${escapeHtml(state.knowledge.title)}</h1></div>
-      ${state.studySet ? `<button class="button" data-action="home">能力地图</button>` : ""}
+      ${state.studySet ? `<button class="button" data-action="home">Capability map</button>` : ""}
     </header>
     ${progressMarkup}
     ${content}
@@ -64,32 +64,32 @@ function shell(content, progress = null) {
 function renderHome() {
   const hasSet = Boolean(state.studySet);
   const generationError = state.generation.error
-    ? `<div class="error"><strong>生成需要处理</strong><p>${escapeHtml(state.generation.error)}</p></div>` : "";
+    ? `<div class="error"><strong>Generation needs attention</strong><p>${escapeHtml(state.generation.error)}</p></div>` : "";
   const counts = hasSet ? `
     <div class="metrics">
-      <div class="metric"><strong>${state.mastery.concepts.filter((concept) => concept.status === "Mastered").length}/${state.mastery.concepts.length}</strong><span>已掌握能力点</span></div>
-      <div class="metric"><strong>${Math.round(state.mastery.overallScore * 100)}%</strong><span>当前掌握度</span></div>
-      <div class="metric"><strong>${state.recommended?.questionIds.length || 0}</strong><span>推荐训练题</span></div>
+      <div class="metric"><strong>${state.mastery.concepts.filter((concept) => concept.status === "Mastered").length}/${state.mastery.concepts.length}</strong><span>Capabilities mastered</span></div>
+      <div class="metric"><strong>${Math.round(state.mastery.overallScore * 100)}%</strong><span>Current mastery</span></div>
+      <div class="metric"><strong>${state.recommended?.questionIds.length || 0}</strong><span>Recommended questions</span></div>
     </div>` : "";
   const recommendation = state.recommended;
   const action = recommendation?.questionIds.length
-    ? `<button class="button primary" data-action="start-recommended">开始${escapeHtml(recommendation.title)}</button>`
+    ? `<button class="button primary" data-action="start-recommended">Start ${escapeHtml(recommendation.title)}</button>`
     : "";
   app.innerHTML = shell(`
     <section class="card study-card">
       ${generationError}
-      <p class="source"><strong>知识来源：</strong>${escapeHtml(state.knowledge.path)}<br>${state.knowledge.headings.length} 个知识章节</p>
-      <h2>${hasSet ? "下一步训练" : "建立你的训练题池"}</h2>
+      <p class="source"><strong>Knowledge source:</strong> ${escapeHtml(state.knowledge.path)}<br>${state.knowledge.headings.length} knowledge sections</p>
+      <h2>${hasSet ? "Your next training session" : "Build your training pool"}</h2>
       <p>${hasSet
-        ? escapeHtml(recommendation?.description || "正在整理你的下一步训练。")
-        : "Copilot 将仅基于当前知识材料生成有来源可追溯的诊断、练习和挑战题。每个能力点都会包含不同场景的题目。"}</p>
+        ? escapeHtml(recommendation?.description || "Preparing your next training session.")
+        : "Copilot will create source-grounded diagnostic, practice, and challenge questions using only this knowledge material. Each capability receives questions in different scenarios."}</p>
       ${counts}
       <div class="actions">
         ${action}
-        ${hasSet ? `<button class="button" data-action="results">查看能力地图</button>
-          <button class="button" data-action="flashcards">复习闪卡</button>` : ""}
-        <button class="button ${hasSet ? "" : "primary"}" data-action="generate">${hasSet ? "生成新的题池" : "生成题池"}</button>
-        ${hasSet ? `<button class="button danger" data-action="reset">重置学习记录</button>` : ""}
+        ${hasSet ? `<button class="button" data-action="results">View capability map</button>
+          <button class="button" data-action="flashcards">Review flashcards</button>` : ""}
+        <button class="button ${hasSet ? "" : "primary"}" data-action="generate">${hasSet ? "Generate new pool" : "Generate pool"}</button>
+        ${hasSet ? `<button class="button danger" data-action="reset">Reset progress</button>` : ""}
       </div>
     </section>`);
   bindCommon();
@@ -99,8 +99,8 @@ function renderGenerating() {
   app.innerHTML = shell(`
     <section class="card loading">
       <div class="spinner" aria-hidden="true"></div>
-      <div><h2>${state.generation.status === "repairing" ? "正在修复题目质量" : "正在生成训练题池"}</h2>
-      <p>Copilot 正在检查题目是否有清晰题干、唯一最佳答案和可追溯来源。</p></div>
+      <div><h2>${state.generation.status === "repairing" ? "Repairing question quality" : "Generating training pool"}</h2>
+      <p>Copilot is checking for clear prompts, one best answer, and traceable sources.</p></div>
     </section>`);
   bindCommon();
 }
@@ -131,13 +131,13 @@ function renderQuiz() {
       <p class="eyebrow">${stageLabel(question.stage)} · ${escapeHtml(conceptTitle(question.conceptId))}</p>
       <h2>${escapeHtml(question.prompt)}</h2>
       <div class="options">${optionMarkup}</div>
-      ${submitted ? `<div class="feedback"><strong>${selectedOption === question.correctOption ? "回答正确" : "还需要巩固"}</strong>
+      ${submitted ? `<div class="feedback"><strong>${selectedOption === question.correctOption ? "Correct" : "Needs reinforcement"}</strong>
         <p>${escapeHtml(question.rationale)}</p>
         <p class="source"><strong>${escapeHtml(question.source.heading)}</strong><br>${escapeHtml(question.source.excerpt)}</p></div>` : ""}
       <div class="actions">
         ${submitted
-          ? `<button class="button primary" data-action="next-question">${index + 1 === queue.length ? "查看能力地图" : "下一题"}</button>`
-          : `<button class="button primary" data-action="submit-answer" ${selectedOption === null ? "disabled" : ""}>检查答案</button>`}
+          ? `<button class="button primary" data-action="next-question">${index + 1 === queue.length ? "View capability map" : "Next question"}</button>`
+          : `<button class="button primary" data-action="submit-answer" ${selectedOption === null ? "disabled" : ""}>Check answer</button>`}
       </div>
     </section>`, { label: stageLabel(question.stage), current: index + 1, total: queue.length });
   bindCommon();
@@ -164,16 +164,16 @@ function renderFlashcard() {
         ${flipped
           ? `<div class="answer"><h2>${escapeHtml(card.answer)}</h2><p>${escapeHtml(card.explanation)}</p>
              <p class="source"><strong>${escapeHtml(card.source.heading)}</strong><br>${escapeHtml(card.source.excerpt)}</p></div>`
-          : `<div><h2>${escapeHtml(card.prompt)}</h2><p class="muted">先在心里作答，再翻开答案。</p></div>`}
+          : `<div><h2>${escapeHtml(card.prompt)}</h2><p class="muted">Recall your answer, then reveal the back.</p></div>`}
       </div>
       <div class="actions center">
         ${flipped
-          ? `<button class="button danger" data-rating="again">1 · 不确定</button>
-             <button class="button" data-rating="unsure">2 · 有些把握</button>
-             <button class="button primary" data-rating="know">3 · 已理解</button>`
-          : `<button class="button primary" data-action="flip">显示答案 <span class="muted">(Space)</span></button>`}
+          ? `<button class="button danger" data-rating="again">1 · Again</button>
+             <button class="button" data-rating="unsure">2 · Unsure</button>
+             <button class="button primary" data-rating="know">3 · Know</button>`
+          : `<button class="button primary" data-action="flip">Reveal answer <span class="muted">(Space)</span></button>`}
       </div>
-    </section>`, { label: "闪卡复习", current: index + 1, total: cards.length });
+    </section>`, { label: "Flashcard review", current: index + 1, total: cards.length });
   bindCommon();
   document.querySelector("[data-action='flip']")?.addEventListener("click", () => {
     flipped = true;
@@ -192,19 +192,19 @@ function renderResults() {
   const recommendation = state.recommended;
   app.innerHTML = shell(`
     <section class="card study-card">
-      <p class="eyebrow">能力地图</p>
+      <p class="eyebrow">Capability map</p>
       <h2>${escapeHtml(recommendation?.title || state.mastery.status)}</h2>
       <p>${escapeHtml(recommendation?.description || "继续训练以建立稳定掌握度。")}</p>
       <div class="metrics">
-        <div class="metric"><strong>${Math.round(state.mastery.overallScore * 100)}%</strong><span>当前掌握度</span></div>
-        <div class="metric"><strong>${state.mastery.concepts.filter((concept) => concept.status === "Mastered").length}</strong><span>已掌握能力</span></div>
-        <div class="metric"><strong>${state.mastery.weakConceptIds.length}</strong><span>待巩固能力</span></div>
+        <div class="metric"><strong>${Math.round(state.mastery.overallScore * 100)}%</strong><span>Current mastery</span></div>
+        <div class="metric"><strong>${state.mastery.concepts.filter((concept) => concept.status === "Mastered").length}</strong><span>Capabilities mastered</span></div>
+        <div class="metric"><strong>${state.mastery.weakConceptIds.length}</strong><span>Capabilities to reinforce</span></div>
       </div>
       <ul class="concept-list">${rows}</ul>
       <div class="actions">
-        ${recommendation?.questionIds.length ? `<button class="button primary" data-action="start-recommended">开始${escapeHtml(recommendation.title)}</button>` : ""}
-        <button class="button" data-action="flashcards">复习闪卡</button>
-        <button class="button" data-action="home">返回主页</button>
+        ${recommendation?.questionIds.length ? `<button class="button primary" data-action="start-recommended">Start ${escapeHtml(recommendation.title)}</button>` : ""}
+        <button class="button" data-action="flashcards">Review flashcards</button>
+        <button class="button" data-action="home">Back to overview</button>
       </div>
     </section>`);
   bindCommon();
@@ -248,7 +248,7 @@ async function generate() {
 }
 
 async function resetProgress() {
-  if (!window.confirm("重置该题池的所有作答和闪卡记录？")) return;
+  if (!window.confirm("Reset all answers and flashcard ratings for this study set?")) return;
   const response = await fetch("/api/reset", { method: "POST" });
   state = await response.json();
   changeScreen("home");
@@ -292,7 +292,7 @@ function conceptTitle(conceptId) {
 }
 
 function stageLabel(stage) {
-  return ({ diagnostic: "基础诊断", practice: "针对性练习", challenge: "进阶挑战" })[stage] || stage;
+  return ({ diagnostic: "Foundation diagnostic", practice: "Targeted practice", challenge: "Advanced challenge" })[stage] || stage;
 }
 
 function escapeHtml(value) {

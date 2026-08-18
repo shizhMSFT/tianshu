@@ -281,8 +281,8 @@ function getRecommendedSession(studySet, progress, mastery) {
     if (diagnostic.length) {
         return {
             kind: "diagnostic",
-            title: "基础诊断",
-            description: `预计 ${diagnostic.length} 题，建立你的能力基线。`,
+            title: "Foundation diagnostic",
+            description: `${diagnostic.length} questions to establish your capability baseline.`,
             questionIds: diagnostic.map((question) => question.id),
         };
     }
@@ -290,8 +290,8 @@ function getRecommendedSession(studySet, progress, mastery) {
     if (review.length) {
         return {
             kind: "practice",
-            title: "针对性练习",
-            description: `用 ${review.length} 道新场景题巩固薄弱能力点。`,
+            title: "Targeted practice",
+            description: `${review.length} new scenario questions to strengthen weak capabilities.`,
             questionIds: review.map((question) => question.id),
         };
     }
@@ -299,17 +299,17 @@ function getRecommendedSession(studySet, progress, mastery) {
     if (challenge.length) {
         return {
             kind: "challenge",
-            title: "进阶挑战",
-            description: `你已掌握基础能力，使用 ${challenge.length} 道决策题验证迁移能力。`,
+            title: "Advanced challenge",
+            description: `You have mastered the foundation. Use ${challenge.length} decision questions to validate transfer.`,
             questionIds: challenge.map((question) => question.id),
         };
     }
     return {
         kind: "complete",
-        title: mastery.weakConceptIds.length ? "需要生成更多练习题" : "本轮训练已完成",
+        title: mastery.weakConceptIds.length ? "More practice questions needed" : "Training complete",
         description: mastery.weakConceptIds.length
-            ? "现有题池已用完；重新生成后会获得新的练习场景。"
-            : "所有已生成的能力点都已掌握。可以稍后复习或重新生成新的题池。",
+            ? "The available question pool is exhausted. Generate a new pool for more practice scenarios."
+            : "All generated capabilities are mastered. Review later or generate a new question pool.",
         questionIds: [],
     };
 }
