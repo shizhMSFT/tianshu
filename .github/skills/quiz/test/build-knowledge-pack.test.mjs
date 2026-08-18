@@ -48,6 +48,13 @@ test("maps one lesson to one H2 concept", () => {
     assert.doesNotMatch(result.markdown, /Primary sources/);
 });
 
+test("accepts learn modules with a core concepts and mechanism section", () => {
+    const learnLesson = lesson.replace("## Core concepts", "## Core concepts and mechanism");
+    const result = parseLesson(learnLesson, "docs/topic/quick/01-agent.md");
+    assert.match(result.markdown, /### Core concepts/);
+    assert.match(result.markdown, /Tools perform bounded actions/);
+});
+
 test("builds a Knowledge Pack from a generated track", async () => {
     const root = await mkdtemp(join(tmpdir(), "quiz-pack-"));
     try {
