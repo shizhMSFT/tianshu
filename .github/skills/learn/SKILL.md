@@ -22,6 +22,7 @@ The topic is required. Infer optional context when it is clear; do not force the
 - Require explicit approval of the complete plan before substantive research or any write under `docs/`.
 - Prefer authoritative, current sources and validate every cited source.
 - Teach every planned concept through a concrete anchor, a provisional mental model, a step-by-step explanation of the mechanism, and a refined model with explicit limits. Headings, definition lists, and diagrams do not count as explanations by themselves.
+- Decide during planning whether each quick- and deep-track module requires a Mermaid visual, including a track README when it also contains instructional module content. Record `Mermaid required` or `Prose only` with a brief rationale for every module; do not use an arbitrary diagram quota.
 - Author for native GitHub rendering with GitHub Flavored Markdown, GitHub Alerts, supported footnotes, and valid Mermaid fences.
 - Do not hard-wrap generated Markdown prose; keep each logical paragraph on one source line.
 - Cite papers with IEEE-style numbered references.
@@ -64,6 +65,7 @@ The visible plan must include:
 - The prerequisite order.
 - A quick track.
 - A deep track.
+- A visual-model decision and rationale for every module in both tracks.
 - The proposed `docs/<topic-slug>/` file map and whether `docs/README.md` will be created or updated.
 
 End the same `ask_user` prompt with one approval question and the approval/revision choices from the output contract. Do not merely announce that a plan was created, link to a hidden artifact, or show only a summary. If the user asks for revisions, reuse all prior answers and findings, update the graph and both tracks, echo the complete revised plan, and request approval again. Do not treat silence, autopilot mode, or approval of an earlier version as approval of a revised plan.
@@ -90,6 +92,8 @@ Before writing, inspect the proposed topic path and `docs/README.md`. Use `ask_u
 
 Create `docs/README.md` as the global index when it is missing; include all existing topic roots, not only the newly generated topic. When the index already exists, preserve its structure and add the new topic without duplicates. Create an organized topic root with independently usable quick and deep tracks, and link it back to the global index. Teach shared foundations once. Every module must move from a concrete example to a small provisional mental model, explain the core concepts and mechanism step by step, and then refine the mental model by stating its mapping and limits. It must also cover why the topic matters, optional hands-on practice, checkpoint questions with each answer in its own collapsed section, validated primary sources, and complete navigation. Use GitHub-native alerts for callouts, Markdown links or GFM footnotes for web references, and IEEE-style numbered citations for papers.
 
+Honor each approved module's visual-model decision using the criteria in the output contract. A topic-root curriculum map satisfies only the topic-root requirement and does not replace a required module-level diagram.
+
 ### 6. Validate before completion
 
 Apply the completion checklist from [references/learning-output.md](references/learning-output.md).
@@ -100,6 +104,8 @@ At minimum, verify:
 - Both tracks exist and can be followed independently.
 - Every planned concept is explained step by step from a concrete anchor rather than merely named, defined, or summarized.
 - Each provisional mental model is revisited after the mechanism is explained, with its useful mapping and limits made explicit.
+- Every module follows its approved visual-model decision, and every `Prose only` decision remains justified by the authored content.
+- Every module marked `Mermaid required` contains a focused Mermaid diagram in a mental-model section; the topic-root diagram is not counted toward this requirement.
 - Diagrams and analogies have explanatory prose and do not substitute for the explanation.
 - Mermaid blocks are valid.
 - Alerts, footnotes, links, details blocks, and citations render correctly on GitHub.

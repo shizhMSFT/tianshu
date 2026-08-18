@@ -28,18 +28,25 @@ Put the following rendered Markdown directly in the `question` field of `ask_use
 
 ## Quick track
 
-| Order | Module | Outcome |
-| --- | --- | --- |
+| Order | Module | Outcome | Visual model |
+| --- | --- | --- | --- |
 
 ## Deep track
 
-| Order | Module | Outcome |
-| --- | --- | --- |
+| Order | Module | Outcome | Visual model |
+| --- | --- | --- | --- |
 
 ## Proposed files
 
 <Whether docs/README.md is created or updated, followed by the docs/<topic-slug>/ tree>
 ```
+
+For every module, set `Visual model` to one of:
+
+- `Mermaid required — <brief rationale naming the process, hierarchy, lifecycle, system, or concept relationship to visualize>`
+- `Prose only — <brief rationale explaining why a diagram would not improve the mental model>`
+
+Make the decision from the module's teaching content rather than from a diagram quota. The decision is part of the approved plan.
 
 Both tracks are mandatory:
 
@@ -57,7 +64,7 @@ Provide these choices:
 1. `Approve and create the learning materials`
 2. `Revise the plan`
 
-Only the first choice is approval to begin substantive research and writing. Do not call `ask_user` until its question contains the full goal, learner context, prerequisite order, quick track, deep track, and proposed file tree. Do not replace the plan with a summary or a statement that it was created.
+Only the first choice is approval to begin substantive research and writing. Do not call `ask_user` until its question contains the full goal, learner context, prerequisite order, quick track, deep track, per-module visual-model decisions, and proposed file tree. Do not replace the plan with a summary or a statement that it was created.
 
 When presenting a revision, echo the complete revised plan again. A delta or list of changes is not enough for approval.
 
@@ -125,6 +132,8 @@ Each track `README.md` must:
 - Link the topic root and the other track.
 - Link shared foundations rather than duplicating them.
 
+When a track `README.md` also contains instructional content rather than serving only as an index, treat that content as a module: include it in the approval plan, apply the module page template, and follow its approved visual-model decision.
+
 ## Module page template
 
 Use one H1 and sentence-case headings. Every learning module must contain the required H2 sections below in the given order. `## References` is conditional and appears only when the module cites papers.
@@ -168,7 +177,9 @@ Use `## Refined mental model` in the generated module. Return explicitly to the 
 
 End with a compact operational model the learner can use to predict behavior or reason about a new case. If an analogy would distort the topic, use rules, invariants, or a state/data-flow model instead.
 
-Include a valid Mermaid diagram in either mental-model section when the module contains a meaningful process, hierarchy, lifecycle, system, or concept relationship. Prefer a small diagram that teaches one idea over a large inventory diagram. Introduce the diagram in prose and explain how to read it; a diagram is not a substitute for the step-by-step explanation. The topic root always requires a curriculum/concept-map diagram.
+Follow the module's approved visual-model decision. Mark a module `Mermaid required` when its mental model depends on a meaningful process or state change, hierarchy or ownership structure, lifecycle, system or data flow, dependency graph, or interaction among concepts. Mark it `Prose only` only when a concise analogy, rule, invariant, comparison, or single-concept explanation communicates the model without meaningful structure or transitions to visualize. Do not choose `Prose only` merely because the same relationship is already explained in text.
+
+For a module marked `Mermaid required`, include a valid Mermaid diagram in either mental-model section. Prefer a small diagram that teaches one idea over a large inventory diagram. Introduce the diagram in prose and explain how to read it; a diagram is not a substitute for the step-by-step explanation. The topic root always requires a curriculum/concept-map diagram, but that root diagram does not satisfy a module-level `Mermaid required` decision.
 
 ### Module section: Optional hands-on
 
@@ -351,6 +362,10 @@ Do not format ordinary product documentation, standards pages, or web references
 - Every module follows the concrete anchor -> provisional mental model -> core concepts and mechanism -> refined mental model sequence.
 - Every approved concept is explained through connected reasoning steps; definition lists, summaries, analogies, and diagrams are not used as substitutes for explanation.
 - Each provisional mental model is mapped to the concrete anchor, revisited after the mechanism, and qualified with its limits.
+- Every quick- and deep-track module follows its approved visual-model decision.
+- A track README containing instructional module content is validated as a module rather than exempted as an index.
+- Every module marked `Mermaid required` contains a focused Mermaid block in its provisional or refined mental-model section; the topic-root concept map is validated separately and is not counted toward this requirement.
+- Every module marked `Prose only` still fits the prose-only criteria after research and authoring; a qualifying process, structure, flow, dependency, or interaction was not omitted from visualization.
 - Every diagram is introduced and interpreted in prose.
 - Checkpoint answers are supported by the module, and at least one checkpoint applies the refined mental model to a different case.
 - Every checkpoint answer has its own adjacent collapsed section, and practical exercises are collapsed.
