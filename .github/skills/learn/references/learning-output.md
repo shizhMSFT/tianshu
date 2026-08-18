@@ -43,10 +43,12 @@ Put the following rendered Markdown directly in the `question` field of `ask_use
 
 Both tracks are mandatory:
 
-- **Quick** provides the essential vocabulary, one useful mental model, the shortest prerequisite refreshers, and enough practical guidance to apply the topic safely.
-- **Deep** covers the approved foundations and target in depth, including mechanisms, tradeoffs, edge cases, failure modes, security or governance where relevant, and hands-on application.
+- **Quick** provides the essential vocabulary, one useful mental model, the shortest prerequisite refreshers, and enough step-by-step explanation and practical guidance to apply the topic safely.
+- **Deep** covers the approved foundations and target in depth, including step-by-step mechanisms, tradeoffs, edge cases, failure modes, security or governance where relevant, and hands-on application.
 
 Quick and deep must each be usable independently. Do not require completing quick before deep. Teach shared content once and cross-link it when duplication would cause the tracks to drift.
+
+Quick may reduce breadth and use a smaller example, but it must not replace explanations with summaries. Deep may add detail, but it must preserve a clear path from a concrete case to the underlying mechanism.
 
 After the rendered plan, end the same `ask_user` question with: `Does this learning plan look right?`
 
@@ -125,19 +127,48 @@ Each track `README.md` must:
 
 ## Module page template
 
-Use one H1 and sentence-case headings. Every learning module must contain the required H2 sections described below. `## References` is conditional and appears only when the module cites papers.
+Use one H1 and sentence-case headings. Every learning module must contain the required H2 sections below in the given order. `## References` is conditional and appears only when the module cites papers.
+
+The sequence is a teaching contract, not merely a page outline. A module is incomplete if it names concepts, provides a glossary, states conclusions, or shows a diagram without walking the learner through how and why the parts relate. Keep each inferential step small enough that the learner can connect it to the preceding step.
 
 ### Module section: Why it matters
 
 Connect the module directly to the learner's stated goal. Avoid generic motivation.
 
-### Module section: Core concepts
+### Module section: Concrete anchor
 
-Define the minimum vocabulary, explain the important relationships, and distinguish commonly confused terms.
+Use `## Concrete anchor` in the generated module. Begin with one small scenario, worked input, observable behavior, counterexample, or before-and-after case that exposes the problem the concepts solve. Describe what the learner should notice before introducing the full terminology.
 
-### Module section: Mental model
+Choose the smallest example that can carry the explanation. The example does not need to be a large end-to-end project, but it must be specific enough for later steps to refer back to it.
 
-Include a valid Mermaid diagram when the module contains a meaningful process, hierarchy, lifecycle, system, or concept relationship. Prefer a small diagram that teaches one idea over a large inventory diagram. The topic root always requires a curriculum/concept-map diagram.
+### Module section: Provisional mental model
+
+Use `## Provisional mental model` in the generated module. Give the learner a compact first model that organizes what they are about to learn. Map each part of the model to the concrete anchor and label it as provisional rather than presenting an analogy as literal truth.
+
+Use a short analogy, state-transition view, data-flow view, hierarchy, or other operational picture appropriate to the topic. Explain the model in prose even when a diagram is present. Do not introduce unexplained boxes, arrows, or metaphorical correspondences.
+
+### Module section: Core concepts and mechanism
+
+Use `## Core concepts and mechanism` in the generated module. Define vocabulary when it first becomes necessary, then explain the relationships and mechanism step by step through the concrete anchor.
+
+For each important transition or relationship, make clear:
+
+1. The relevant starting state or condition.
+2. What changes, acts, or is compared.
+3. Why that step follows.
+4. The resulting state, observation, or invariant.
+
+Connect every new term back to the example, distinguish commonly confused terms, and surface the misconception most likely to break the learner's reasoning. Definitions and feature lists may support the explanation, but they cannot be its main form. Do not skip causal or logical links with phrases such as "simply," "obviously," or "it just works."
+
+When the topic is not procedural, explain one relationship at a time using a comparison, counterexample, derivation, or change in constraints. The learner should be able to reconstruct the conclusion from the presented steps rather than memorize it.
+
+### Module section: Refined mental model
+
+Use `## Refined mental model` in the generated module. Return explicitly to the provisional model after teaching the mechanism. Explain which parts map accurately, what the detailed explanation adds or changes, and where the model stops being reliable.
+
+End with a compact operational model the learner can use to predict behavior or reason about a new case. If an analogy would distort the topic, use rules, invariants, or a state/data-flow model instead.
+
+Include a valid Mermaid diagram in either mental-model section when the module contains a meaningful process, hierarchy, lifecycle, system, or concept relationship. Prefer a small diagram that teaches one idea over a large inventory diagram. Introduce the diagram in prose and explain how to read it; a diagram is not a substitute for the step-by-step explanation. The topic root always requires a curriculum/concept-map diagram.
 
 ### Module section: Optional hands-on
 
@@ -156,7 +187,7 @@ If hands-on work would be unsafe, inaccessible, or pedagogically empty, retain t
 
 ### Module section: Checkpoint questions
 
-Ask questions that test explanation, application, and misconception detection, not just recall. Put each answer in its own collapsed section immediately after its question. Never combine multiple answers in one `<details>` block:
+Ask questions that test explanation, application, and misconception detection, not just recall. At least one question must require the learner to apply the refined mental model to a case that differs from the concrete anchor. Every answer must be derivable from the module's explanation; do not test unstated facts. Put each answer in its own collapsed section immediately after its question. Never combine multiple answers in one `<details>` block:
 
 ```html
 1. <Question one>
@@ -317,6 +348,11 @@ Do not format ordinary product documentation, standards pages, or web references
 - The published prerequisite graph is acyclic.
 - Quick and deep are both present and independently navigable.
 - Each page follows its required structure.
+- Every module follows the concrete anchor -> provisional mental model -> core concepts and mechanism -> refined mental model sequence.
+- Every approved concept is explained through connected reasoning steps; definition lists, summaries, analogies, and diagrams are not used as substitutes for explanation.
+- Each provisional mental model is mapped to the concrete anchor, revisited after the mechanism, and qualified with its limits.
+- Every diagram is introduced and interpreted in prose.
+- Checkpoint answers are supported by the module, and at least one checkpoint applies the refined mental model to a different case.
 - Every checkpoint answer has its own adjacent collapsed section, and practical exercises are collapsed.
 - Mermaid blocks are syntactically valid and readable.
 - GitHub Alerts use supported labels and syntax; footnotes, details blocks, and Markdown links render natively on GitHub.
