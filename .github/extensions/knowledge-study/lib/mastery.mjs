@@ -1,5 +1,3 @@
-const ratingScores = { again: 0, unsure: 0.5, know: 1 };
-
 export function createDefaultProgress() {
     return {
         schemaVersion: 1,
@@ -15,37 +13,22 @@ export function calculateMastery(studySet, progress = createDefaultProgress()) {
         return { overallScore: 0, status: "Not started", concepts: [], weakConceptIds: [] };
     }
     const concepts = studySet.concepts.map((concept) => {
-        const cards = studySet.flashcards.filter((item) => item.conceptId === concept.id);
         const questions = studySet.quizQuestions.filter((item) => item.conceptId === concept.id);
-        const cardValues = cards
-            .map((card) => ratingScores[progress.flashcards?.[card.id]?.rating])
-            .filter((value) => value !== undefined);
-        const firstValues = questions
+        const attempts = questions
             .map((question) => progress.quiz?.[question.id]?.correct)
             .filter((value) => typeof value === "boolean")
             .map(Number);
-        const retestValues = questions
-            .map((question) => progress.retests?.[question.id]?.correct)
-            .filter((value) => typeof value === "boolean")
-            .map(Number);
-        const flashScore = average(cardValues);
-        const firstScore = average(firstValues);
-        const retestScore = average(retestValues);
-        let quizScore = firstScore;
-        if (firstScore !== null && retestScore !== null) quizScore = 0.4 * firstScore + 0.6 * retestScore;
-        const score = weightedAvailable([
-            [flashScore, 0.4],
-            [quizScore, 0.6],
-        ]);
+        const correctCount = attempts.reduce((total, value) => total + value, 0);
+        const requiredCorrect = Math.min(2, questions.length);
+        const score = attempts.length ? Math.min(1, correctCount / requiredCorrect) : null;
         return {
             id: concept.id,
             title: concept.title,
             score: round(score ?? 0),
             status: statusFor(score),
-            flashScore: round(flashScore),
-            firstQuizScore: round(firstScore),
-            retestScore: round(retestScore),
-            attempted: cardValues.length + firstValues.length + retestValues.length > 0,
+            correctCount,
+            requiredCorrect,
+            attempted: attempts.length > 0,
         };
     });
     const attempted = concepts.filter((concept) => concept.attempted);
@@ -61,24 +44,37 @@ export function calculateMastery(studySet, progress = createDefaultProgress()) {
 export function buildReviewQueue(studySet, progress) {
     if (!studySet) return [];
     const weakConcepts = new Set(calculateMastery(studySet, progress).weakConceptIds);
-    return studySet.quizQuestions.filter((question) => weakConcepts.has(question.conceptId));
+    return studySet.quizQuestions.filter((question) => (
+        weakConcepts.has(question.conceptId)
+        && progress.quiz?.[question.id] === undefined
+        && question.stage !== "challenge"
+    ));
+}
+
+export function buildDiagnosticQueue(studySet, progress, limit = 8) {
+    if (!studySet) return [];
+    return studySet.quizQuestions
+        .filter((question) => question.stage === "diagnostic" && progress.quiz?.[question.id] === undefined)
+        .slice(0, limit);
+}
+
+export function buildChallengeQueue(studySet, progress) {
+    if (!studySet) return [];
+    const mastery = calculateMastery(studySet, progress);
+    if (mastery.weakConceptIds.length) return [];
+    return studySet.quizQuestions.filter((question) => (
+        question.stage === "challenge" && progress.quiz?.[question.id] === undefined
+    ));
 }
 
 function average(values) {
     return values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
 }
 
-function weightedAvailable(entries) {
-    const available = entries.filter(([value]) => value !== null);
-    if (!available.length) return null;
-    const weights = available.reduce((total, [, weight]) => total + weight, 0);
-    return available.reduce((total, [value, weight]) => total + value * weight, 0) / weights;
-}
-
 function statusFor(score) {
     if (score === null) return "Not started";
     if (score >= 0.8) return "Mastered";
-    if (score >= 0.55) return "Developing";
+    if (score >= 0.5) return "Developing";
     return "Needs review";
 }
 

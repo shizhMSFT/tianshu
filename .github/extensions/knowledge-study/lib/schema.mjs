@@ -118,8 +118,9 @@ export function validateStudySet(candidate, knowledge) {
     for (const [index, question] of quizQuestions.entries()) {
         const prefix = `quizQuestions[${index}]`;
         validateId(question, prefix, itemIds, errors);
-        requireStrings(question, ["conceptId", "prompt", "rationale"], prefix, errors);
+        requireStrings(question, ["conceptId", "stage", "prompt", "rationale"], prefix, errors);
         validateDifficulty(question?.difficulty, `${prefix}.difficulty`, errors);
+        validateStage(question?.stage, `${prefix}.stage`, errors);
         if (nonEmpty(question?.conceptId) && !conceptIds.has(question.conceptId)) errors.push(`${prefix}.conceptId is unknown`);
         if (!Array.isArray(question?.options) || question.options.length !== 4 || question.options.some((option) => !nonEmpty(option))) {
             errors.push(`${prefix}.options must contain exactly four non-empty strings`);
@@ -131,9 +132,17 @@ export function validateStudySet(candidate, knowledge) {
     }
     for (const conceptId of conceptIds) {
         if (!flashcards.some((card) => card.conceptId === conceptId)) errors.push(`concept ${conceptId} has no flashcard`);
-        if (!quizQuestions.some((question) => question.conceptId === conceptId)) errors.push(`concept ${conceptId} has no quiz question`);
+        const questions = quizQuestions.filter((question) => question.conceptId === conceptId);
+        if (questions.length < 3) errors.push(`concept ${conceptId} requires at least three quiz questions`);
+        if (!questions.some((question) => question.stage === "diagnostic")) errors.push(`concept ${conceptId} requires a diagnostic question`);
+        if (!questions.some((question) => question.stage === "practice")) errors.push(`concept ${conceptId} requires a practice question`);
+        if (!questions.some((question) => question.stage === "challenge")) errors.push(`concept ${conceptId} requires a challenge question`);
     }
     if (concepts.length === 0) errors.push("at least one concept is required");
+    if (quizQuestions.length < 10) errors.push("at least ten quiz questions are required");
+    if (quizQuestions.filter((question) => question.stage === "diagnostic").length < 6) {
+        errors.push("at least six diagnostic questions are required");
+    }
 
     return errors.length === 0
         ? { valid: true, errors: [], value: { title: candidate.title.trim(), concepts, flashcards, quizQuestions } }
@@ -168,6 +177,12 @@ function requireStrings(value, fields, prefix, errors) {
 
 function validateDifficulty(value, prefix, errors) {
     if (!["easy", "medium", "hard"].includes(value)) errors.push(`${prefix} must be easy, medium, or hard`);
+}
+
+function validateStage(value, prefix, errors) {
+    if (!["diagnostic", "practice", "challenge"].includes(value)) {
+        errors.push(`${prefix} must be diagnostic, practice, or challenge`);
+    }
 }
 
 function validateSource(source, knowledge, prefix, errors) {

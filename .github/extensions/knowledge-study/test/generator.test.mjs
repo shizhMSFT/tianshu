@@ -18,5 +18,7 @@ test("passes Knowledge Pack learning objectives into generation", async () => {
     });
     assert.equal(messageId, "message-id");
     assert.match(sent.prompt, /Learning objectives: Recognize the signal \| Select a validation question/);
+    assert.match(sent.prompt, /10 to 14 quiz questions/);
+    assert.match(sent.prompt, /unambiguously best answer/);
     assert.deepEqual(sent.attachments, [{ type: "file", path: "C:\\pack\\knowledge.md" }]);
 });

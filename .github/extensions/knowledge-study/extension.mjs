@@ -8,7 +8,13 @@ import {
     joinSession,
 } from "@github/copilot-sdk/extension";
 import { requestGeneration } from "./lib/generator.mjs";
-import { calculateMastery, createDefaultProgress } from "./lib/mastery.mjs";
+import {
+    buildChallengeQueue,
+    buildDiagnosticQueue,
+    buildReviewQueue,
+    calculateMastery,
+    createDefaultProgress,
+} from "./lib/mastery.mjs";
 import { readKnowledge, readKnowledgePack, validateStudySet } from "./lib/schema.mjs";
 import {
     createStudyIdentity,
@@ -244,6 +250,8 @@ async function acceptGeneratedStudySet(instanceId, candidate) {
 async function getPublicState(instanceId) {
     const state = requireInstance(instanceId);
     const stored = await loadStudy(state.workspacePath, state.identity.studySetId);
+    const progress = stored?.progress || createDefaultProgress();
+    const mastery = calculateMastery(stored?.studySet, progress);
     return {
         studySetId: state.identity.studySetId,
         knowledge: {
@@ -261,8 +269,48 @@ async function getPublicState(instanceId) {
         },
         generation: state.generation,
         studySet: stored?.studySet || null,
-        progress: stored?.progress || createDefaultProgress(),
-        mastery: calculateMastery(stored?.studySet, stored?.progress),
+        progress,
+        mastery,
+        recommended: getRecommendedSession(stored?.studySet, progress, mastery),
+    };
+}
+
+function getRecommendedSession(studySet, progress, mastery) {
+    if (!studySet) return null;
+    const diagnostic = buildDiagnosticQueue(studySet, progress);
+    if (diagnostic.length) {
+        return {
+            kind: "diagnostic",
+            title: "基础诊断",
+            description: `预计 ${diagnostic.length} 题，建立你的能力基线。`,
+            questionIds: diagnostic.map((question) => question.id),
+        };
+    }
+    const review = buildReviewQueue(studySet, progress);
+    if (review.length) {
+        return {
+            kind: "practice",
+            title: "针对性练习",
+            description: `用 ${review.length} 道新场景题巩固薄弱能力点。`,
+            questionIds: review.map((question) => question.id),
+        };
+    }
+    const challenge = buildChallengeQueue(studySet, progress);
+    if (challenge.length) {
+        return {
+            kind: "challenge",
+            title: "进阶挑战",
+            description: `你已掌握基础能力，使用 ${challenge.length} 道决策题验证迁移能力。`,
+            questionIds: challenge.map((question) => question.id),
+        };
+    }
+    return {
+        kind: "complete",
+        title: mastery.weakConceptIds.length ? "需要生成更多练习题" : "本轮训练已完成",
+        description: mastery.weakConceptIds.length
+            ? "现有题池已用完；重新生成后会获得新的练习场景。"
+            : "所有已生成的能力点都已掌握。可以稍后复习或重新生成新的题池。",
+        questionIds: [],
     };
 }
 

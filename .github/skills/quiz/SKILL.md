@@ -12,7 +12,7 @@ Build an interactive quiz from existing `/learn` output without researching or r
 The user may provide:
 
 - A topic name or `docs/<topic>/` path.
-- A track: `quick` or `deep`.
+- A topic name or a specific lesson path. Tracks remain an internal content detail.
 - A specific lesson path.
 
 Infer a unique topic or explicit track when possible. Do not ask questions whose answers are already present in the request or repository.
@@ -28,21 +28,16 @@ Inspect `docs/README.md` and topic directories under `docs/`.
 - If several topics match, use `ask_user` to select one.
 - If the user supplies a specific lesson, use its parent track.
 
-### 2. Select the track
+### 2. Start with a diagnostic pack
 
-When the user did not specify a track, use `ask_user` with:
-
-1. `Quick track (Recommended)`
-2. `Deep track`
-
-Ask only one question. Do not combine topic and track selection in the same prompt.
+Do not ask the learner to select `quick` or `deep`. Start with the `quick` track as the foundation diagnostic pack. The Knowledge Study Canvas uses mastery to decide whether the learner should continue with targeted practice or progress to advanced material.
 
 ### 3. Build the Knowledge Pack
 
 Run the bundled adapter from the repository root:
 
 ```powershell
-node .github\skills\quiz\scripts\build-knowledge-pack.mjs --topic "<topic-root>" --track "<quick|deep>"
+node .github\skills\quiz\scripts\build-knowledge-pack.mjs --topic "<topic-root>" --track "quick"
 ```
 
 The adapter deterministically creates:

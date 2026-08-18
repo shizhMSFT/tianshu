@@ -18,6 +18,17 @@ const source = {
 };
 
 function validStudySet() {
+    const quizQuestions = Array.from({ length: 10 }, (_, index) => ({
+        id: `quiz-vector-${index}`,
+        conceptId: "vector-db",
+        stage: index < 6 ? "diagnostic" : index < 8 ? "practice" : "challenge",
+        prompt: `What should be checked in scenario ${index + 1}?`,
+        options: ["Usage", "Color", "Font", "Operating system"],
+        correctOption: 0,
+        rationale: "Usage distinguishes retrieval from storage.",
+        difficulty: "medium",
+        source,
+    }));
     return {
         title: "Trainer",
         concepts: [{ id: "vector-db", title: "Vector DB", summary: "Retrieval signal", source }],
@@ -30,16 +41,7 @@ function validStudySet() {
             difficulty: "easy",
             source,
         }],
-        quizQuestions: [{
-            id: "quiz-vector",
-            conceptId: "vector-db",
-            prompt: "What should be checked?",
-            options: ["Usage", "Color", "Font", "Operating system"],
-            correctOption: 0,
-            rationale: "Usage distinguishes retrieval from storage.",
-            difficulty: "medium",
-            source,
-        }],
+        quizQuestions,
     };
 }
 
@@ -59,6 +61,14 @@ test("requires four quiz options", () => {
     const value = validStudySet();
     value.quizQuestions[0].options = ["A", "B"];
     assert.equal(validateStudySet(value, knowledge).valid, false);
+});
+
+test("requires a broad, staged question pool", () => {
+    const value = validStudySet();
+    value.quizQuestions = value.quizQuestions.slice(0, 3);
+    const result = validateStudySet(value, knowledge);
+    assert.equal(result.valid, false);
+    assert.match(result.errors.join(" "), /at least ten quiz questions/);
 });
 
 test("includes nested subsections in a parent heading grounding scope", () => {
