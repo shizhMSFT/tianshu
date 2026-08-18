@@ -9,10 +9,10 @@ export function parseLesson(markdown, sourcePath) {
 
     const sections = parseH2Sections(markdown);
     const why = sections.get("Why it matters");
-    const core = sections.get("Core concepts");
+    const core = sections.get("Core concepts") || sections.get("Core concepts and mechanism");
     const checkpoints = sections.get("Checkpoint questions");
     if (!why || !core) {
-        throw new Error(`Lesson must contain "Why it matters" and "Core concepts": ${sourcePath}`);
+        throw new Error(`Lesson must contain "Why it matters" and either "Core concepts" or "Core concepts and mechanism": ${sourcePath}`);
     }
 
     const parts = [
