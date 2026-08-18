@@ -12,26 +12,32 @@ Put the following rendered Markdown directly in the `question` field of `ask_use
 # Learning plan: <topic>
 
 ## Goal
+
 <The clarified outcome, scope, and relevant constraints>
 
 ## Learner context
+
 - Confirmed knowledge: <known prerequisites>
 - Needs a refresher: <partially known prerequisites>
 - New foundations: <unknown prerequisites>
 
 ## Prerequisite order
+
 | Order | Concept | Builds toward | Why it is required |
 | --- | --- | --- | --- |
 
 ## Quick track
+
 | Order | Module | Outcome |
 | --- | --- | --- |
 
 ## Deep track
+
 | Order | Module | Outcome |
 | --- | --- | --- |
 
 ## Proposed files
+
 <The docs/<topic-slug>/ tree>
 ```
 
