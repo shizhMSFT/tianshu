@@ -1,59 +1,59 @@
 # Quality rubric
 
-## 风格选择
+## Style selection
 
-为每个候选风格按 0-5 分评价以下项目，并换算为 0-100 的 `fit_score`：
+Score each style candidate from 0-5 on every dimension and convert the weighted result to a 0-100 `fit_score`:
 
-| 维度 | 权重 | 通过标准 |
+| Dimension | Weight | Passing standard |
 |---|---:|---|
-| 受众匹配 | 25% | 视觉语气符合受众的专业程度、文化和场景 |
-| 主题匹配 | 20% | 色彩、图形语言和节奏来自主题，而非通用模板 |
-| 品牌匹配 | 20% | 遵守提供的品牌 token；无品牌时仍有清晰理由 |
-| 信息密度 | 15% | 能承载数据、流程或叙事，不依赖缩小字体 |
-| 素材可得性 | 10% | 所需照片、图标和图表可以合法、可靠地获得或生成 |
-| 可访问性 | 10% | 对比度、字号、色盲辨识和阅读顺序合理 |
+| Audience fit | 25% | The visual tone matches the audience's level of expertise, culture, and setting |
+| Topic fit | 20% | Color, graphic language, and pacing arise from the topic rather than a generic template |
+| Brand fit | 20% | Provided brand tokens are respected; without a brand, each choice still has a clear rationale |
+| Information density | 15% | The system supports the required data, processes, and narrative without shrinking text |
+| Asset availability | 10% | Required photos, icons, and charts can be obtained or generated legally and reliably |
+| Accessibility | 10% | Contrast, type size, color-blind differentiation, and reading order are appropriate |
 
-选择最高分候选。若未选最高分，必须在 `selection.rationale` 中记录用户偏好或品牌约束。
+Select the highest-scoring candidate. If another candidate is selected, record the user preference or brand constraint in `selection.rationale`.
 
-## 必需语义检查
+## Required semantic checks
 
-`design-validation.json` 必须包含以下全部检查 ID。每项只能在有具体证据时标为 `pass`。
+`design-validation.json` must contain every check ID below. Mark a check `pass` only when concrete evidence exists.
 
-| ID | 通过标准 |
+| ID | Passing standard |
 |---|---|
-| `knowledge_fidelity` | 所有事实、数字和主张可回溯；推断已标注；无编造 |
-| `narrative` | 开场、发展、结论形成一条可复述的故事线 |
-| `slide_purpose` | 每页都有必要且唯一的目的、takeaway 和结论式标题 |
-| `content_density` | 无页面依赖过小字号或长段落；复杂内容已拆页 |
-| `visual_plan` | 每页有与 takeaway 直接相关、可执行的视觉方案；选择理由不是单纯装饰 |
-| `style_fit` | 候选比较充分，所选风格与受众、主题、品牌相符 |
-| `style_consistency` | 所有页面引用已定义的 layout、variant 和同一风格版本 |
-| `readability` | 字号、留白、层级、对齐和快速浏览体验合理 |
-| `accessibility` | 对比度、替代文本、颜色编码和阅读顺序完善 |
-| `asset_rights` | 外部素材的来源、授权、署名可追溯；AI 素材已披露并保存最终提示词 |
-| `source_traceability` | 内容页和总结页引用有效的 `K-*`；脚注空间已规划 |
-| `generation_readiness` | 布局、素材、数据映射和实现约束足以直接交给 `pptx` |
+| `knowledge_fidelity` | Every fact, number, and claim is traceable; inferences are labeled; nothing is invented |
+| `narrative` | Opening, development, and conclusion form one retellable story |
+| `slide_purpose` | Every slide has a necessary and unique purpose, takeaway, and conclusion-led title |
+| `content_density` | No slide depends on tiny text or long paragraphs; complex material has been split |
+| `visual_plan` | Every slide has an executable visual directly related to the takeaway, not mere decoration |
+| `style_fit` | Candidate comparison is complete and the selected style fits the audience, topic, and brand |
+| `style_consistency` | Every slide uses a defined layout, variant, and the same style version |
+| `readability` | Type size, whitespace, hierarchy, alignment, and scanability are appropriate |
+| `accessibility` | Contrast, alt text, color encoding, and reading order are complete |
+| `asset_rights` | External origins, licenses, and credits are traceable; AI assets are disclosed and preserve their final prompts |
+| `source_traceability` | Content and summary slides reference valid `K-*` items and reserve space for citations |
+| `generation_readiness` | Layouts, assets, data mappings, and implementation constraints are complete enough for `pptx` |
 
-## 问题等级
+## Issue severity
 
-- `blocker`：事实错误、缺少来源、叙事断裂、关键页面缺失、风格未定义、无法生成。
-- `major`：信息过载、视觉与结论不匹配、对比度不足、布局不一致、关键素材不可得。
-- `minor`：措辞、局部间距、非关键素材或节奏可改善。
+- `blocker`: factual error, missing source, broken narrative, missing critical slide, undefined style, or an artifact that cannot be generated.
+- `major`: overloaded content, visual-takeaway mismatch, inadequate contrast, inconsistent layout, or an unavailable critical asset.
+- `minor`: wording, local spacing, non-critical asset, or pacing improvement.
 
-通过条件：
+Passing requires:
 
-1. 全部必需检查为 `pass`。
-2. `blockers` 为空。
-3. `issues` 中每项状态为 `resolved`。
-4. 确定性验证器返回退出码 0。
+1. Every required check is `pass`.
+2. `blockers` is empty.
+3. Every entry in `issues` has status `resolved`.
+4. The deterministic validator exits with code 0.
 
-## 最终 PPT 一致性
+## Final presentation fidelity
 
-生成后抽取文本并逐页渲染，比较以下内容：
+After generation, extract presentation text and render every slide, then verify:
 
-- `deck-design.json` 与 PPT 的页数、顺序、文字、数据、引用一一对应。
-- 页面使用指定的 layout 意图、variant 和视觉类型。
-- `style-guide.json` 的 palette、typography、spacing、motif、图片和图表规则被贯彻。
-- 外部图片与图标无水印且来源、授权、署名完整；AI 素材与设计记录一致。
-- 不存在溢出、遮挡、错误换行、低对比度、模板占位符或素材失真。
-- 任何生成阶段修复都已经回写源设计产物，而不是只改生成代码。
+- Slide count, order, text, data, and citations match `deck-design.json`.
+- Each slide implements its specified layout intent, variant, and visual kind.
+- Palette, typography, spacing, motif, image, and chart rules match `style-guide.json`.
+- External images and icons are watermark-free and have complete origin, license, and attribution records; AI assets match the design records.
+- The deck has no overflow, overlap, incorrect wrapping, low contrast, template placeholder, or distorted asset.
+- Every generation-stage repair has been written back to the source design artifact rather than applied only in generator code.
