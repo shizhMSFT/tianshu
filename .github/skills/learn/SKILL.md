@@ -21,6 +21,7 @@ The topic is required. Infer optional context when it is clear; do not force the
 - Echo the complete learning plan in a user-visible approval prompt; never rely on agent plan mode or a hidden plan artifact.
 - Require explicit approval of the complete plan before substantive research or any write under `docs/`.
 - Prefer authoritative, current sources and validate every cited source.
+- Teach every planned concept through a concrete anchor, a provisional mental model, a step-by-step explanation of the mechanism, and a refined model with explicit limits. Headings, definition lists, and diagrams do not count as explanations by themselves.
 - Author for native GitHub rendering with GitHub Flavored Markdown, GitHub Alerts, supported footnotes, and valid Mermaid fences.
 - Do not hard-wrap generated Markdown prose; keep each logical paragraph on one source line.
 - Cite papers with IEEE-style numbered references.
@@ -87,7 +88,7 @@ Follow the output layout, page templates, cross-link contract, source policy, an
 
 Before writing, inspect the proposed topic path and `docs/README.md`. Use `ask_user` if existing topic material would be merged, replaced, moved, or otherwise changed.
 
-Create `docs/README.md` as the global index when it is missing; include all existing topic roots, not only the newly generated topic. When the index already exists, preserve its structure and add the new topic without duplicates. Create an organized topic root with independently usable quick and deep tracks, and link it back to the global index. Teach shared foundations once. Every module must cover why it matters, core concepts, a mental model, optional hands-on practice, checkpoint questions with each answer in its own collapsed section, validated primary sources, and complete navigation. Use GitHub-native alerts for callouts, Markdown links or GFM footnotes for web references, and IEEE-style numbered citations for papers.
+Create `docs/README.md` as the global index when it is missing; include all existing topic roots, not only the newly generated topic. When the index already exists, preserve its structure and add the new topic without duplicates. Create an organized topic root with independently usable quick and deep tracks, and link it back to the global index. Teach shared foundations once. Every module must move from a concrete example to a small provisional mental model, explain the core concepts and mechanism step by step, and then refine the mental model by stating its mapping and limits. It must also cover why the topic matters, optional hands-on practice, checkpoint questions with each answer in its own collapsed section, validated primary sources, and complete navigation. Use GitHub-native alerts for callouts, Markdown links or GFM footnotes for web references, and IEEE-style numbered citations for papers.
 
 ### 6. Validate before completion
 
@@ -97,6 +98,9 @@ At minimum, verify:
 
 - The approved concept graph is represented in prerequisite order.
 - Both tracks exist and can be followed independently.
+- Every planned concept is explained step by step from a concrete anchor rather than merely named, defined, or summarized.
+- Each provisional mental model is revisited after the mechanism is explained, with its useful mapping and limits made explicit.
+- Diagrams and analogies have explanatory prose and do not substitute for the explanation.
 - Mermaid blocks are valid.
 - Alerts, footnotes, links, details blocks, and citations render correctly on GitHub.
 - Prose paragraphs are not hard-wrapped.
