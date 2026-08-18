@@ -83,7 +83,7 @@ Follow the output layout, page templates, cross-link contract, source policy, an
 
 Before writing, inspect the proposed path. Use `ask_user` if existing material would be merged, replaced, moved, or otherwise changed.
 
-Create an organized topic root with independently usable quick and deep tracks. Teach shared foundations once. Every module must cover why it matters, core concepts, a mental model, optional hands-on practice, checkpoint questions with collapsed answers, validated primary sources, and complete navigation.
+Create an organized topic root with independently usable quick and deep tracks. Teach shared foundations once. Every module must cover why it matters, core concepts, a mental model, optional hands-on practice, checkpoint questions with each answer in its own collapsed section, validated primary sources, and complete navigation.
 
 ### 6. Validate before completion
 
@@ -94,7 +94,7 @@ At minimum, verify:
 - The approved concept graph is represented in prerequisite order.
 - Both tracks exist and can be followed independently.
 - Mermaid blocks are valid.
-- Exercises and checkpoint answers use collapsed sections.
+- Exercises use collapsed sections, and every checkpoint answer has its own collapsed section.
 - Citations support their nearby claims.
 - All relative links resolve and no generated page is orphaned.
 - Existing user-authored content was preserved.
