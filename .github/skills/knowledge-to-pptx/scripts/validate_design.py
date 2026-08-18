@@ -23,6 +23,10 @@ REQUIRED_REVIEW_CHECKS = {
     "accessibility",
     "asset_rights",
     "source_traceability",
+    "motion_purpose",
+    "motion_consistency",
+    "motion_accessibility",
+    "motion_generation_readiness",
     "generation_readiness",
 }
 
@@ -66,7 +70,14 @@ EXTERNAL_VISUAL_SOURCE_TYPES = {
     "open-license",
     "icon-library",
 }
+MOTION_MODES = {"none", "transition-only", "custom", "narration-synced"}
+MOTION_TRIGGERS = {"on-click", "with-previous", "after-previous"}
+MOTION_DUTIES = {"enter", "emphasize", "move", "exit"}
+GENERIC_ENTRANCE_EFFECTS = {"auto", "mixed", "random"}
+DELIVERY_MODES = {"live", "self-running", "recorded"}
 HEX_COLOR = re.compile(r"^[0-9A-F]{6}$")
+CANONICAL_EFFECT = re.compile(r"^[a-z][a-z0-9_-]*$")
+MOTION_TARGET_ID = re.compile(r"^[a-z][a-z0-9-]*$")
 
 
 Issue = dict[str, str]
@@ -78,6 +89,10 @@ def _issue(level: str, code: str, path: str, message: str) -> Issue:
 
 def _is_non_empty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
+
+
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def _as_object(value: Any, path: str, issues: list[Issue]) -> dict[str, Any]:
@@ -116,6 +131,49 @@ def _require_positive_int(
         )
         return 0
     return value
+
+
+def _require_bool(
+    obj: dict[str, Any], key: str, path: str, issues: list[Issue]
+) -> bool:
+    value = obj.get(key)
+    if not isinstance(value, bool):
+        issues.append(
+            _issue("error", "required.boolean", f"{path}.{key}", "Expected a boolean.")
+        )
+        return False
+    return value
+
+
+def _require_number(
+    obj: dict[str, Any],
+    key: str,
+    path: str,
+    issues: list[Issue],
+    *,
+    minimum: float | None = None,
+    exclusive_minimum: bool = False,
+) -> float:
+    value = obj.get(key)
+    if not _is_number(value):
+        issues.append(
+            _issue("error", "required.number", f"{path}.{key}", "Expected a number.")
+        )
+        return 0.0
+    number = float(value)
+    if minimum is not None:
+        invalid = number <= minimum if exclusive_minimum else number < minimum
+        if invalid:
+            operator = ">" if exclusive_minimum else ">="
+            issues.append(
+                _issue(
+                    "error",
+                    "number.range",
+                    f"{path}.{key}",
+                    f"Expected a number {operator} {minimum:g}.",
+                )
+            )
+    return number
 
 
 def _validate_schema_version(
@@ -248,7 +306,7 @@ def _validate_knowledge(
 
 def _validate_style(
     style: dict[str, Any], issues: list[Issue]
-) -> tuple[str, int, set[str], set[str]]:
+) -> tuple[str, int, set[str], set[str], dict[str, Any]]:
     path = "style"
     _validate_schema_version(style, path, issues)
     deck_id = _require_string(style, "deck_id", path, issues)
@@ -362,6 +420,178 @@ def _validate_style(
         media = _as_object(style.get(media_key), media_path, issues)
         _require_string(media, "description", media_path, issues)
 
+    motion_path = f"{path}.motion_system"
+    motion_system = _as_object(style.get("motion_system"), motion_path, issues)
+    _require_string(motion_system, "purpose", motion_path, issues)
+
+    default_transition_path = f"{motion_path}.default_transition"
+    default_transition = _as_object(
+        motion_system.get("default_transition"), default_transition_path, issues
+    )
+    transition_effect = _require_string(
+        default_transition, "effect", default_transition_path, issues
+    )
+    if transition_effect and not CANONICAL_EFFECT.fullmatch(transition_effect):
+        issues.append(
+            _issue(
+                "error",
+                "motion.transition.effect.invalid",
+                f"{default_transition_path}.effect",
+                "Use a canonical lowercase PPT Master transition key.",
+            )
+        )
+    _require_number(
+        default_transition,
+        "duration_s",
+        default_transition_path,
+        issues,
+        minimum=0,
+        exclusive_minimum=True,
+    )
+
+    object_policy = _require_string(
+        motion_system, "object_animation_policy", motion_path, issues
+    )
+    if object_policy and object_policy not in {"opt-in", "off"}:
+        issues.append(
+            _issue(
+                "error",
+                "motion.object_policy.invalid",
+                f"{motion_path}.object_animation_policy",
+                "Use opt-in or off.",
+            )
+        )
+
+    dominant_trigger = _require_string(
+        motion_system, "dominant_trigger", motion_path, issues
+    )
+    if dominant_trigger and dominant_trigger not in MOTION_TRIGGERS:
+        issues.append(
+            _issue(
+                "error",
+                "motion.trigger.invalid",
+                f"{motion_path}.dominant_trigger",
+                "Use on-click, with-previous, or after-previous.",
+            )
+        )
+
+    duration_path = f"{motion_path}.duration_range_s"
+    duration_range = _as_object(
+        motion_system.get("duration_range_s"), duration_path, issues
+    )
+    duration_min = _require_number(
+        duration_range,
+        "min",
+        duration_path,
+        issues,
+        minimum=0,
+        exclusive_minimum=True,
+    )
+    duration_max = _require_number(
+        duration_range,
+        "max",
+        duration_path,
+        issues,
+        minimum=0,
+        exclusive_minimum=True,
+    )
+    if duration_min > duration_max:
+        issues.append(
+            _issue(
+                "error",
+                "motion.duration.range",
+                duration_path,
+                "min cannot exceed max.",
+            )
+        )
+    _require_number(
+        motion_system,
+        "default_stagger_s",
+        motion_path,
+        issues,
+        minimum=0,
+    )
+
+    for policy_key, allowed in (
+        ("auto_advance_policy", {"off", "explicit", "narration-only"}),
+        ("sound_policy", {"none", "explicit"}),
+        ("narration_sync_policy", {"none", "cue-derived"}),
+    ):
+        policy = _require_string(motion_system, policy_key, motion_path, issues)
+        if policy and policy not in allowed:
+            issues.append(
+                _issue(
+                    "error",
+                    f"motion.{policy_key}.invalid",
+                    f"{motion_path}.{policy_key}",
+                    f"Use one of: {', '.join(sorted(allowed))}.",
+                )
+            )
+
+    reduced_path = f"{motion_path}.reduced_motion"
+    reduced_motion = _as_object(
+        motion_system.get("reduced_motion"), reduced_path, issues
+    )
+    reduced_object_animation = _require_string(
+        reduced_motion, "object_animation", reduced_path, issues
+    )
+    if reduced_object_animation and reduced_object_animation != "none":
+        issues.append(
+            _issue(
+                "error",
+                "motion.reduced.object_animation",
+                f"{reduced_path}.object_animation",
+                "Reduced-motion object animation must be none.",
+            )
+        )
+    reduced_morph = _require_string(
+        reduced_motion, "morph_transition", reduced_path, issues
+    )
+    if reduced_morph and reduced_morph not in {"fade", "none"}:
+        issues.append(
+            _issue(
+                "error",
+                "motion.reduced.morph_transition",
+                f"{reduced_path}.morph_transition",
+                "Reduced-motion Morph fallback must be fade or none.",
+            )
+        )
+    _require_number(
+        reduced_motion,
+        "max_transition_duration_s",
+        reduced_path,
+        issues,
+        minimum=0,
+        exclusive_minimum=True,
+    )
+    _require_bool(
+        reduced_motion, "disable_auto_advance", reduced_path, issues
+    )
+
+    for rule_key in ("principles", "forbidden"):
+        values = _as_list(
+            motion_system.get(rule_key), f"{motion_path}.{rule_key}", issues
+        )
+        if not values:
+            issues.append(
+                _issue(
+                    "error",
+                    f"motion.{rule_key}.empty",
+                    f"{motion_path}.{rule_key}",
+                    "At least one motion rule is required.",
+                )
+            )
+        for index, value in enumerate(values):
+            if not _is_non_empty_string(value):
+                issues.append(
+                    _issue(
+                        "error",
+                        f"motion.{rule_key}.invalid",
+                        f"{motion_path}.{rule_key}[{index}]",
+                        "Expected a non-empty string.",
+                    )
+                )
+
     layout_ids, layouts = _unique_ids(
         _as_list(style.get("layouts"), f"{path}.layouts", issues),
         f"{path}.layouts",
@@ -420,7 +650,537 @@ def _validate_style(
                 _issue("error", f"style.rules.{rule_type}.empty", f"{path}.rules.{rule_type}", "At least one rule is required.")
             )
 
-    return deck_id, style_version, layout_ids, variant_ids
+    return deck_id, style_version, layout_ids, variant_ids, motion_system
+
+
+def _validate_motion(
+    slide: dict[str, Any],
+    slide_path: str,
+    previous_slide_id: str | None,
+    speaker_notes: str,
+    motion_system: dict[str, Any],
+    delivery: dict[str, Any],
+    issues: list[Issue],
+) -> None:
+    motion_path = f"{slide_path}.motion"
+    motion = _as_object(slide.get("motion"), motion_path, issues)
+    mode = _require_string(motion, "mode", motion_path, issues)
+    if mode and mode not in MOTION_MODES:
+        issues.append(
+            _issue(
+                "error",
+                "motion.mode.invalid",
+                f"{motion_path}.mode",
+                f"Use one of: {', '.join(sorted(MOTION_MODES))}.",
+            )
+        )
+    _require_string(motion, "communication_job", motion_path, issues)
+
+    transition_path = f"{motion_path}.transition"
+    transition = _as_object(
+        motion.get("transition"), transition_path, issues
+    )
+    transition_effect = _require_string(
+        transition, "effect", transition_path, issues
+    )
+    if transition_effect and not CANONICAL_EFFECT.fullmatch(transition_effect):
+        issues.append(
+            _issue(
+                "error",
+                "motion.transition.effect.invalid",
+                f"{transition_path}.effect",
+                "Use a canonical lowercase PPT Master transition key.",
+            )
+        )
+    _require_number(
+        transition,
+        "duration_s",
+        transition_path,
+        issues,
+        minimum=0,
+        exclusive_minimum=True,
+    )
+    auto_advance = transition.get("auto_advance_s")
+    if auto_advance is not None and (
+        not _is_number(auto_advance) or float(auto_advance) < 0
+    ):
+        issues.append(
+            _issue(
+                "error",
+                "motion.transition.auto_advance",
+                f"{transition_path}.auto_advance_s",
+                "Expected null or a number >= 0.",
+            )
+        )
+    elif auto_advance is not None:
+        auto_policy = motion_system.get("auto_advance_policy")
+        if auto_policy == "off":
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.auto_advance.policy",
+                    f"{transition_path}.auto_advance_s",
+                    "The global motion system disables auto-advance.",
+                )
+            )
+        elif (
+            auto_policy == "narration-only"
+            and delivery.get("narration") is not True
+        ):
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.auto_advance.narration",
+                    f"{transition_path}.auto_advance_s",
+                    "The global policy permits auto-advance only with narration.",
+                )
+            )
+    effect_options = transition.get("effect_options")
+    if not isinstance(effect_options, dict):
+        issues.append(
+            _issue(
+                "error",
+                "motion.transition.effect_options",
+                f"{transition_path}.effect_options",
+                "Expected an object; use {} when no options apply.",
+            )
+        )
+    transition_sound = transition.get("sound")
+    if transition_sound is not None:
+        if (
+            not _is_non_empty_string(transition_sound)
+            or not transition_sound.lower().endswith(".wav")
+        ):
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.transition.sound",
+                    f"{transition_path}.sound",
+                    "Expected null or a project-relative .wav path.",
+                )
+            )
+        if motion_system.get("sound_policy") != "explicit":
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.sound.policy",
+                    f"{transition_path}.sound",
+                    "The global motion system does not permit sound cues.",
+                )
+            )
+
+    builds_path = f"{motion_path}.builds"
+    build_ids, builds = _unique_ids(
+        _as_list(motion.get("builds"), builds_path, issues),
+        builds_path,
+        issues,
+    )
+    del build_ids
+    seen_orders: set[int] = set()
+    duration_range = (
+        motion_system.get("duration_range_s")
+        if isinstance(motion_system.get("duration_range_s"), dict)
+        else {}
+    )
+    duration_min = duration_range.get("min")
+    duration_max = duration_range.get("max")
+    delivery_mode = delivery.get("mode")
+
+    for index, build in enumerate(builds):
+        build_path = f"{builds_path}[{index}]"
+        build_id = build.get("id")
+        if _is_non_empty_string(build_id) and not MOTION_TARGET_ID.fullmatch(
+            build_id
+        ):
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.build_id.invalid",
+                    f"{build_path}.id",
+                    "Use a lowercase kebab-case build ID.",
+                )
+            )
+        target_id = _require_string(build, "target_id", build_path, issues)
+        if target_id and not MOTION_TARGET_ID.fullmatch(target_id):
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.target_id.invalid",
+                    f"{build_path}.target_id",
+                    "Use a lowercase kebab-case semantic target ID.",
+                )
+            )
+
+        duty = _require_string(build, "duty", build_path, issues)
+        if duty and duty not in MOTION_DUTIES:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.duty.invalid",
+                    f"{build_path}.duty",
+                    f"Use one of: {', '.join(sorted(MOTION_DUTIES))}.",
+                )
+            )
+
+        effect = _require_string(build, "effect", build_path, issues)
+        if effect:
+            valid_effect = (
+                duty == "enter"
+                and (
+                    effect.startswith("entrance_")
+                    or effect in GENERIC_ENTRANCE_EFFECTS
+                )
+            ) or (
+                duty == "emphasize" and effect.startswith("emphasis_")
+            ) or (
+                duty == "move" and effect.startswith("path_")
+            ) or (
+                duty == "exit" and effect.startswith("exit_")
+            )
+            if not valid_effect:
+                issues.append(
+                    _issue(
+                        "error",
+                        "motion.effect.duty_mismatch",
+                        f"{build_path}.effect",
+                        "Effect family must match the semantic duty.",
+                    )
+                )
+
+        order = _require_positive_int(build, "order", build_path, issues)
+        if order in seen_orders:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.order.duplicate",
+                    f"{build_path}.order",
+                    f"Duplicate page-wide motion order: {order}.",
+                )
+            )
+        elif order:
+            seen_orders.add(order)
+
+        trigger = _require_string(build, "trigger", build_path, issues)
+        if trigger and trigger not in MOTION_TRIGGERS:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.trigger.invalid",
+                    f"{build_path}.trigger",
+                    "Use on-click, with-previous, or after-previous.",
+                )
+            )
+
+        duration = _require_number(
+            build,
+            "duration_s",
+            build_path,
+            issues,
+            minimum=0,
+            exclusive_minimum=True,
+        )
+        _require_number(
+            build, "delay_s", build_path, issues, minimum=0
+        )
+        if (
+            _is_number(duration_min)
+            and _is_number(duration_max)
+            and (duration < float(duration_min) or duration > float(duration_max))
+        ):
+            issues.append(
+                _issue(
+                    "warning",
+                    "motion.duration.outside_system",
+                    f"{build_path}.duration_s",
+                    "Duration is outside the style guide's normal motion range; review the exception.",
+                )
+            )
+
+        narration_anchor = build.get("narration_anchor")
+        if not isinstance(narration_anchor, str):
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.narration_anchor.type",
+                    f"{build_path}.narration_anchor",
+                    "Expected a string; use an empty string when no cue applies.",
+                )
+            )
+            narration_anchor = ""
+        if mode == "narration-synced" and not narration_anchor.strip():
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.narration_anchor.required",
+                    f"{build_path}.narration_anchor",
+                    "Narration-synced builds require a stable cue phrase.",
+                )
+            )
+
+        trigger_shape = build.get("trigger_shape")
+        if trigger_shape is not None:
+            if not _is_non_empty_string(trigger_shape):
+                issues.append(
+                    _issue(
+                        "error",
+                        "motion.trigger_shape.invalid",
+                        f"{build_path}.trigger_shape",
+                        "Expected a non-empty target ID or null.",
+                    )
+                )
+            elif trigger != "on-click":
+                issues.append(
+                    _issue(
+                        "error",
+                        "motion.trigger_shape.trigger",
+                        f"{build_path}.trigger_shape",
+                        "trigger_shape requires trigger on-click.",
+                    )
+                )
+            elif not MOTION_TARGET_ID.fullmatch(trigger_shape):
+                issues.append(
+                    _issue(
+                        "error",
+                        "motion.trigger_shape.invalid",
+                        f"{build_path}.trigger_shape",
+                        "Use a lowercase kebab-case semantic target ID.",
+                    )
+                )
+            elif trigger_shape == target_id:
+                issues.append(
+                    _issue(
+                        "error",
+                        "motion.trigger_shape.self",
+                        f"{build_path}.trigger_shape",
+                        "trigger_shape must reference a different target.",
+                    )
+                )
+
+        if delivery_mode == "recorded" and (
+            trigger == "on-click" or trigger_shape is not None
+        ):
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.recorded.interactive",
+                    build_path,
+                    "Recorded narration is incompatible with on-click and trigger_shape.",
+                )
+            )
+
+        build_effect_options = build.get("effect_options")
+        if not isinstance(build_effect_options, dict):
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.effect_options",
+                    f"{build_path}.effect_options",
+                    "Expected an object; use {} when no options apply.",
+                )
+            )
+        build_sound = build.get("sound")
+        if build_sound is not None:
+            if (
+                not _is_non_empty_string(build_sound)
+                or not re.search(r"\.(m4a|mp3|wav)$", build_sound, re.IGNORECASE)
+            ):
+                issues.append(
+                    _issue(
+                        "error",
+                        "motion.build.sound",
+                        f"{build_path}.sound",
+                        "Expected null or a project-relative .m4a, .mp3, or .wav path.",
+                    )
+                )
+            if motion_system.get("sound_policy") != "explicit":
+                issues.append(
+                    _issue(
+                        "error",
+                        "motion.sound.policy",
+                        f"{build_path}.sound",
+                        "The global motion system does not permit sound cues.",
+                    )
+                )
+
+    if motion_system.get("object_animation_policy") == "off" and builds:
+        issues.append(
+            _issue(
+                "error",
+                "motion.object_policy.off",
+                builds_path,
+                "The global motion system disables object animation.",
+            )
+        )
+
+    morph = motion.get("morph")
+    has_morph = morph is not None
+    if has_morph:
+        morph_path = f"{motion_path}.morph"
+        morph_obj = _as_object(morph, morph_path, issues)
+        from_slide_id = _require_string(
+            morph_obj, "from_slide_id", morph_path, issues
+        )
+        if previous_slide_id is None:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.morph.first_slide",
+                    morph_path,
+                    "The first slide cannot be a Morph destination.",
+                )
+            )
+        elif from_slide_id and from_slide_id != previous_slide_id:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.morph.nonadjacent",
+                    f"{morph_path}.from_slide_id",
+                    f"Morph must reference the immediately preceding slide: {previous_slide_id}.",
+                )
+            )
+        pair_ids, pairs = _unique_ids(
+            _as_list(morph_obj.get("pairs"), f"{morph_path}.pairs", issues),
+            f"{morph_path}.pairs",
+            issues,
+        )
+        del pair_ids
+        if not pairs:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.morph.pairs.empty",
+                    f"{morph_path}.pairs",
+                    "At least one deterministic Morph pair is required.",
+                )
+            )
+        seen_from: set[str] = set()
+        seen_to: set[str] = set()
+        for index, pair in enumerate(pairs):
+            pair_path = f"{morph_path}.pairs[{index}]"
+            pair_id = pair.get("id")
+            if _is_non_empty_string(pair_id) and not MOTION_TARGET_ID.fullmatch(
+                pair_id
+            ):
+                issues.append(
+                    _issue(
+                        "error",
+                        "motion.morph.pair_id.invalid",
+                        f"{pair_path}.id",
+                        "Use a lowercase kebab-case Morph identity.",
+                    )
+                )
+            for key, seen in (
+                ("from_target_id", seen_from),
+                ("to_target_id", seen_to),
+            ):
+                target = _require_string(pair, key, pair_path, issues)
+                if target and not MOTION_TARGET_ID.fullmatch(target):
+                    issues.append(
+                        _issue(
+                            "error",
+                            "motion.target_id.invalid",
+                            f"{pair_path}.{key}",
+                            "Use a lowercase kebab-case semantic target ID.",
+                        )
+                    )
+                if target in seen:
+                    issues.append(
+                        _issue(
+                            "error",
+                            "motion.morph.target.duplicate",
+                            f"{pair_path}.{key}",
+                            f"Morph target is reused: {target}.",
+                        )
+                    )
+                elif target:
+                    seen.add(target)
+
+    if mode == "none":
+        if transition_effect != "none" or builds or has_morph:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.mode.none",
+                    motion_path,
+                    "Mode none requires transition none, no builds, and no Morph block.",
+                )
+            )
+    elif mode == "transition-only":
+        if transition_effect in {"none", "morph"} or builds or has_morph:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.mode.transition_only",
+                    motion_path,
+                    "transition-only requires a non-Morph transition and no builds or Morph block.",
+                )
+            )
+    elif mode == "custom" and not builds and not has_morph:
+        issues.append(
+            _issue(
+                "error",
+                "motion.mode.custom.empty",
+                motion_path,
+                "Custom motion requires at least one object build or Morph pair.",
+            )
+        )
+    elif mode == "narration-synced":
+        if not builds:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.mode.narration.empty",
+                    builds_path,
+                    "Narration-synced motion requires at least one object build.",
+                )
+            )
+        if delivery.get("narration") is not True:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.narration.disabled",
+                    motion_path,
+                    "Narration-synced motion requires delivery.narration true.",
+                )
+            )
+        if not speaker_notes.strip():
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.narration.notes_missing",
+                    f"{slide_path}.content.speaker_notes",
+                    "Narration-synced motion requires speaker notes.",
+                )
+            )
+
+    if transition_effect == "morph":
+        if not has_morph:
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.morph.required",
+                    f"{motion_path}.morph",
+                    "A Morph transition requires deterministic Morph pairs.",
+                )
+            )
+        if not isinstance(effect_options, dict) or effect_options.get("morph_by") != "object":
+            issues.append(
+                _issue(
+                    "error",
+                    "motion.morph.effect_options",
+                    f"{transition_path}.effect_options.morph_by",
+                    "Deterministic Morph requires morph_by object.",
+                )
+            )
+    elif has_morph:
+        issues.append(
+            _issue(
+                "error",
+                "motion.morph.transition",
+                transition_path,
+                "A Morph block requires transition effect morph.",
+            )
+        )
 
 
 def _validate_design(
@@ -428,6 +1188,7 @@ def _validate_design(
     fact_ids: set[str],
     layout_ids: set[str],
     variant_ids: set[str],
+    motion_system: dict[str, Any],
     expected_style_version: int,
     issues: list[Issue],
 ) -> tuple[str, int]:
@@ -444,6 +1205,23 @@ def _validate_design(
     _require_string(design, "objective", path, issues)
     _require_string(design, "audience", path, issues)
     _require_string(design, "narrative", path, issues)
+
+    delivery_path = f"{path}.delivery"
+    delivery = _as_object(design.get("delivery"), delivery_path, issues)
+    delivery_mode = _require_string(delivery, "mode", delivery_path, issues)
+    if delivery_mode and delivery_mode not in DELIVERY_MODES:
+        issues.append(
+            _issue(
+                "error",
+                "design.delivery.mode",
+                f"{delivery_path}.mode",
+                f"Use one of: {', '.join(sorted(DELIVERY_MODES))}.",
+            )
+        )
+    _require_bool(delivery, "narration", delivery_path, issues)
+    _require_bool(
+        delivery, "reduced_motion_variant", delivery_path, issues
+    )
 
     slides_value = _as_list(design.get("slides"), f"{path}.slides", issues)
     slide_ids, slides = _unique_ids(slides_value, f"{path}.slides", issues)
@@ -486,6 +1264,17 @@ def _validate_design(
         content = _as_object(slide.get("content"), f"{slide_path}.content", issues)
         body = _as_list(content.get("body"), f"{slide_path}.content.body", issues)
         data_points = _as_list(content.get("data_points"), f"{slide_path}.content.data_points", issues)
+        speaker_notes = content.get("speaker_notes")
+        if not isinstance(speaker_notes, str):
+            issues.append(
+                _issue(
+                    "error",
+                    "design.speaker_notes.type",
+                    f"{slide_path}.content.speaker_notes",
+                    "Expected a string; use an empty string when notes are not required.",
+                )
+            )
+            speaker_notes = ""
         if len(body) > 6:
             issues.append(
                 _issue("warning", "design.body.too_many_items", f"{slide_path}.content.body", "More than six body items suggests an overloaded slide.")
@@ -564,6 +1353,16 @@ def _validate_design(
             issues.append(
                 _issue("error", "design.visual.alt_text", f"{slide_path}.visual.alt_text", "Non-decorative visuals require alt text.")
             )
+
+        _validate_motion(
+            slide,
+            slide_path,
+            slides[index - 1].get("id") if index > 0 else None,
+            speaker_notes,
+            motion_system,
+            delivery,
+            issues,
+        )
 
         layout_id = _require_string(slide, "layout_id", slide_path, issues)
         if layout_id and layout_id not in layout_ids:
@@ -698,12 +1497,15 @@ def validate_documents(
     issues: list[Issue] = []
 
     knowledge_id, fact_ids = _validate_knowledge(knowledge, issues)
-    style_id, style_version, layout_ids, variant_ids = _validate_style(style, issues)
+    style_id, style_version, layout_ids, variant_ids, motion_system = _validate_style(
+        style, issues
+    )
     design_id, design_version = _validate_design(
         design,
         fact_ids,
         layout_ids,
         variant_ids,
+        motion_system,
         style_version,
         issues,
     )

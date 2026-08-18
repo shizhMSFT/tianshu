@@ -24,6 +24,6 @@ Tianshu is a set of skills running in GitHub Copilot app, helping you to
 | [`dream`](.github/skills/dream/SKILL.md) | Synthesize related ideas, archive duplicates, and produce an auditable report. |
 | [`judge`](.github/skills/judge/SKILL.md) | Evaluate whether an idea is worth expanding using relevant mental models. |
 | [`brainstorm`](.github/skills/brainstorm/SKILL.md) | Generate domain-grounded ideas and judge them against durable mental models. |
-| [`knowledge-to-pptx`](.github/skills/knowledge-to-pptx/SKILL.md) | Turn knowledge into a designed, validated, and consistent PowerPoint presentation. |
+| [`knowledge-to-pptx`](.github/skills/knowledge-to-pptx/SKILL.md) | Turn knowledge into a designed, validated PowerPoint with a consistent visual and motion system. |
 
 Learning is hard. Tianshu makes it delightful.

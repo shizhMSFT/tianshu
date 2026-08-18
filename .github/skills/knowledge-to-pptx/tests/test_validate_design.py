@@ -144,6 +144,29 @@ def _valid_documents() -> tuple[
         "icon_style": {"description": "Use one consistent outline icon family."},
         "chart_style": {"description": "Use direct labels and quiet grid lines."},
         "table_style": {"description": "Use quiet borders and aligned numbers."},
+        "motion_system": {
+            "purpose": "Use restrained motion to clarify sequence and attention.",
+            "default_transition": {"effect": "fade", "duration_s": 0.4},
+            "object_animation_policy": "opt-in",
+            "dominant_trigger": "after-previous",
+            "duration_range_s": {"min": 0.2, "max": 0.8},
+            "default_stagger_s": 0.12,
+            "auto_advance_policy": "off",
+            "sound_policy": "none",
+            "narration_sync_policy": "cue-derived",
+            "reduced_motion": {
+                "object_animation": "none",
+                "morph_transition": "fade",
+                "max_transition_duration_s": 0.4,
+                "disable_auto_advance": True,
+            },
+            "principles": [
+                "Animate only when motion clarifies sequence, causality, or emphasis."
+            ],
+            "forbidden": [
+                "Do not animate decorative objects or vary effects for novelty."
+            ],
+        },
         "layouts": [
             {"id": "title-hero", "description": "Title composition.", "purpose": ["title"]},
             {"id": "evidence-split", "description": "Evidence split.", "purpose": ["content"]},
@@ -187,6 +210,18 @@ def _valid_documents() -> tuple[
                 "decorative": True,
                 "alt_text": "",
             },
+            "motion": {
+                "mode": "transition-only",
+                "communication_job": "Settle the audience into a calm opening.",
+                "transition": {
+                    "effect": "fade",
+                    "duration_s": 0.4,
+                    "auto_advance_s": None,
+                    "effect_options": {},
+                },
+                "builds": [],
+                "morph": None,
+            },
             "layout_id": "title-hero",
             "style_variant": "dark",
             "style_version": 1,
@@ -220,6 +255,32 @@ def _valid_documents() -> tuple[
                 },
                 "decorative": False,
                 "alt_text": "Before-and-after comparison of the first finding.",
+            },
+            "motion": {
+                "mode": "custom",
+                "communication_job": "Reveal the finding before its supporting comparison.",
+                "transition": {
+                    "effect": "fade",
+                    "duration_s": 0.4,
+                    "auto_advance_s": None,
+                    "effect_options": {},
+                },
+                "builds": [
+                    {
+                        "id": "finding-reveal",
+                        "target_id": "finding-card",
+                        "duty": "enter",
+                        "effect": "entrance_fade",
+                        "order": 1,
+                        "trigger": "after-previous",
+                        "duration_s": 0.3,
+                        "delay_s": 0,
+                        "narration_anchor": "",
+                        "trigger_shape": None,
+                        "effect_options": {},
+                    }
+                ],
+                "morph": None,
             },
             "layout_id": "evidence-split",
             "style_variant": "light",
@@ -255,6 +316,32 @@ def _valid_documents() -> tuple[
                 "decorative": False,
                 "alt_text": "Chart showing the second finding.",
             },
+            "motion": {
+                "mode": "custom",
+                "communication_job": "Build the chart once so the comparison is read in order.",
+                "transition": {
+                    "effect": "fade",
+                    "duration_s": 0.4,
+                    "auto_advance_s": None,
+                    "effect_options": {},
+                },
+                "builds": [
+                    {
+                        "id": "chart-reveal",
+                        "target_id": "evidence-chart",
+                        "duty": "enter",
+                        "effect": "entrance_wipe",
+                        "order": 1,
+                        "trigger": "after-previous",
+                        "duration_s": 0.5,
+                        "delay_s": 0,
+                        "narration_anchor": "",
+                        "trigger_shape": None,
+                        "effect_options": {"direction": "left"},
+                    }
+                ],
+                "morph": None,
+            },
             "layout_id": "data-focus",
             "style_variant": "light",
             "style_version": 1,
@@ -289,6 +376,18 @@ def _valid_documents() -> tuple[
                 "decorative": False,
                 "alt_text": "Three action cards summarizing the recommendation.",
             },
+            "motion": {
+                "mode": "transition-only",
+                "communication_job": "Keep the closing action visible as one commitment.",
+                "transition": {
+                    "effect": "fade",
+                    "duration_s": 0.4,
+                    "auto_advance_s": None,
+                    "effect_options": {},
+                },
+                "builds": [],
+                "morph": None,
+            },
             "layout_id": "summary-grid",
             "style_variant": "dark",
             "style_version": 1,
@@ -302,6 +401,11 @@ def _valid_documents() -> tuple[
         "objective": "Explain the recommendation.",
         "audience": "Decision makers.",
         "narrative": "Context, evidence, recommendation.",
+        "delivery": {
+            "mode": "live",
+            "narration": False,
+            "reduced_motion_variant": False,
+        },
         "estimated_minutes": 8,
         "slide_count": len(slides),
         "sections": [
@@ -397,6 +501,136 @@ class ValidateDesignTests(unittest.TestCase):
 
         self.assertEqual("fail", result["status"])
         self.assertIn("design.visual.generation_prompt", codes)
+
+    def test_missing_motion_system_fails(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        style.pop("motion_system")
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+        codes = {item["code"] for item in result["issues"]}
+
+        self.assertEqual("fail", result["status"])
+        self.assertIn("type.object", codes)
+
+    def test_motion_effect_must_match_semantic_duty(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        design["slides"][1]["motion"]["builds"][0]["effect"] = "emphasis_spin"
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+        codes = {item["code"] for item in result["issues"]}
+
+        self.assertEqual("fail", result["status"])
+        self.assertIn("motion.effect.duty_mismatch", codes)
+
+    def test_global_object_animation_off_rejects_builds(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        style["motion_system"]["object_animation_policy"] = "off"
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+        codes = {item["code"] for item in result["issues"]}
+
+        self.assertEqual("fail", result["status"])
+        self.assertIn("motion.object_policy.off", codes)
+
+    def test_auto_advance_respects_global_policy(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        design["slides"][0]["motion"]["transition"]["auto_advance_s"] = 4
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+        codes = {item["code"] for item in result["issues"]}
+
+        self.assertEqual("fail", result["status"])
+        self.assertIn("motion.auto_advance.policy", codes)
+
+    def test_recorded_narration_rejects_interactive_motion(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        design["delivery"]["mode"] = "recorded"
+        design["delivery"]["narration"] = True
+        design["slides"][1]["motion"]["builds"][0]["trigger"] = "on-click"
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+        codes = {item["code"] for item in result["issues"]}
+
+        self.assertEqual("fail", result["status"])
+        self.assertIn("motion.recorded.interactive", codes)
+
+    def test_narration_synced_motion_requires_cue_phrase(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        design["delivery"]["narration"] = True
+        design["slides"][1]["motion"]["mode"] = "narration-synced"
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+        codes = {item["code"] for item in result["issues"]}
+
+        self.assertEqual("fail", result["status"])
+        self.assertIn("motion.narration_anchor.required", codes)
+
+    def test_narration_synced_motion_accepts_stable_cue_phrase(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        design["delivery"]["mode"] = "recorded"
+        design["delivery"]["narration"] = True
+        design["slides"][1]["motion"]["mode"] = "narration-synced"
+        design["slides"][1]["motion"]["builds"][0][
+            "narration_anchor"
+        ] = "Explain finding one"
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+
+        self.assertEqual("pass", result["status"])
+        self.assertEqual([], result["issues"])
+
+    def test_morph_must_pair_adjacent_slides(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        motion = design["slides"][2]["motion"]
+        motion["transition"] = {
+            "effect": "morph",
+            "duration_s": 0.8,
+            "auto_advance_s": None,
+            "effect_options": {"morph_by": "object"},
+        }
+        motion["builds"] = []
+        motion["morph"] = {
+            "from_slide_id": "S-01",
+            "pairs": [
+                {
+                    "id": "hero-object",
+                    "from_target_id": "hero-overview",
+                    "to_target_id": "hero-detail",
+                }
+            ],
+        }
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+        codes = {item["code"] for item in result["issues"]}
+
+        self.assertEqual("fail", result["status"])
+        self.assertIn("motion.morph.nonadjacent", codes)
+
+    def test_valid_deterministic_morph_passes(self) -> None:
+        knowledge, design, style, review = _valid_documents()
+        motion = design["slides"][2]["motion"]
+        motion["transition"] = {
+            "effect": "morph",
+            "duration_s": 0.8,
+            "auto_advance_s": None,
+            "effect_options": {"morph_by": "object"},
+        }
+        motion["builds"] = []
+        motion["morph"] = {
+            "from_slide_id": "S-02",
+            "pairs": [
+                {
+                    "id": "hero-object",
+                    "from_target_id": "hero-overview",
+                    "to_target_id": "hero-detail",
+                }
+            ],
+        }
+
+        result = VALIDATOR.validate_documents(knowledge, design, style, review)
+
+        self.assertEqual("pass", result["status"])
+        self.assertEqual([], result["issues"])
 
     def test_unsupported_schema_version_fails(self) -> None:
         knowledge, design, style, review = _valid_documents()
