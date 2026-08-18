@@ -28,25 +28,30 @@ Put the following rendered Markdown directly in the `question` field of `ask_use
 
 ## Quick track
 
-| Order | Module | Outcome | Visual model |
-| --- | --- | --- | --- |
+| Order | Module | Outcome | Diagram | Table |
+| --- | --- | --- | --- | --- |
 
 ## Deep track
 
-| Order | Module | Outcome | Visual model |
-| --- | --- | --- | --- |
+| Order | Module | Outcome | Diagram | Table |
+| --- | --- | --- | --- | --- |
 
 ## Proposed files
 
 <Whether docs/README.md is created or updated, followed by the docs/<topic-slug>/ tree>
 ```
 
-For every module, set `Visual model` to one of:
+For every module, set `Diagram` to one of:
 
 - `Mermaid required — <brief rationale naming the process, hierarchy, lifecycle, system, or concept relationship to visualize>`
-- `Prose only — <brief rationale explaining why a diagram would not improve the mental model>`
+- `No Mermaid — <brief rationale explaining why a diagram would not improve the mental model>`
 
-Make the decision from the module's teaching content rather than from a diagram quota. The decision is part of the approved plan.
+Also set `Table` independently to one of:
+
+- `Table required — <brief rationale naming the comparison, mapping, matrix, or structured reference data to organize>`
+- `No table — <brief rationale explaining why tabular structure would not improve understanding>`
+
+Make both decisions from the module's teaching content rather than from a diagram or table quota. The decisions are independent and may require both Mermaid and a table in the same module. Both decisions are part of the approved plan.
 
 Both tracks are mandatory:
 
@@ -64,7 +69,7 @@ Provide these choices:
 1. `Approve and create the learning materials`
 2. `Revise the plan`
 
-Only the first choice is approval to begin substantive research and writing. Do not call `ask_user` until its question contains the full goal, learner context, prerequisite order, quick track, deep track, per-module visual-model decisions, and proposed file tree. Do not replace the plan with a summary or a statement that it was created.
+Only the first choice is approval to begin substantive research and writing. Do not call `ask_user` until its question contains the full goal, learner context, prerequisite order, quick track, deep track, per-module diagram and table decisions, and proposed file tree. Do not replace the plan with a summary or a statement that it was created.
 
 When presenting a revision, echo the complete revised plan again. A delta or list of changes is not enough for approval.
 
@@ -132,13 +137,13 @@ Each track `README.md` must:
 - Link the topic root and the other track.
 - Link shared foundations rather than duplicating them.
 
-When a track `README.md` also contains instructional content rather than serving only as an index, treat that content as a module: include it in the approval plan, apply the module page template, and follow its approved visual-model decision.
+When a track `README.md` also contains instructional content rather than serving only as an index, treat that content as a module: include it in the approval plan, apply the module page template, and follow its approved diagram and table decisions.
 
 ## Module page template
 
 Use one H1 and sentence-case headings. Every learning module must contain the required H2 sections below in the given order. `## References` is conditional and appears only when the module cites papers.
 
-The sequence is a teaching contract, not merely a page outline. A module is incomplete if it names concepts, provides a glossary, states conclusions, or shows a diagram without walking the learner through how and why the parts relate. Keep each inferential step small enough that the learner can connect it to the preceding step.
+The sequence is a teaching contract, not merely a page outline. A module is incomplete if it names concepts, provides a glossary, states conclusions, or shows a diagram or table without walking the learner through how and why the parts relate. Keep each inferential step small enough that the learner can connect it to the preceding step.
 
 ### Module section: Why it matters
 
@@ -177,9 +182,15 @@ Use `## Refined mental model` in the generated module. Return explicitly to the 
 
 End with a compact operational model the learner can use to predict behavior or reason about a new case. If an analogy would distort the topic, use rules, invariants, or a state/data-flow model instead.
 
-Follow the module's approved visual-model decision. Mark a module `Mermaid required` when its mental model depends on a meaningful process or state change, hierarchy or ownership structure, lifecycle, system or data flow, dependency graph, or interaction among concepts. Mark it `Prose only` only when a concise analogy, rule, invariant, comparison, or single-concept explanation communicates the model without meaningful structure or transitions to visualize. Do not choose `Prose only` merely because the same relationship is already explained in text.
+Follow the module's approved diagram and table decisions. Mark a module `Mermaid required` when its mental model depends on a meaningful process or state change, hierarchy or ownership structure, lifecycle, system or data flow, dependency graph, or interaction among concepts. Mark it `No Mermaid` only when a concise analogy, rule, invariant, comparison, or single-concept explanation communicates the model without meaningful structure or transitions to visualize. Do not choose `No Mermaid` merely because the same relationship is already explained in text.
+
+Mark a module `Table required` when learners need to compare multiple items across stable dimensions, map concepts to examples or consequences, inspect a decision or tradeoff matrix, or use compact structured reference data while reasoning. Mark it `No table` when the content is primarily causal, sequential, or explanatory; when rows and columns would not expose a meaningful pattern; or when the necessary cells would become long prose. Do not choose `Table required` merely to summarize headings, definitions, or facts already presented clearly.
+
+The diagram and table decisions are independent. A module may require neither, either one, or both. Regardless of the decisions, prose must carry the concrete anchor, connected mechanism, interpretation, and limits.
 
 For a module marked `Mermaid required`, include a valid Mermaid diagram in either mental-model section. Prefer a small diagram that teaches one idea over a large inventory diagram. Introduce the diagram in prose and explain how to read it; a diagram is not a substitute for the step-by-step explanation. The topic root always requires a curriculum/concept-map diagram, but that root diagram does not satisfy a module-level `Mermaid required` decision.
+
+For a module marked `Table required`, include at least one focused GFM table near the explanation it supports. Give columns concise, meaningful headings; keep each row conceptually parallel; and avoid narrative-length cells, excessive columns, or ambiguous empty cells. Introduce the table in prose, explain the pattern or decision it reveals, and continue the connected explanation outside the table. A table is not a substitute for the step-by-step explanation.
 
 ### Module section: Optional hands-on
 
@@ -245,6 +256,7 @@ Author pages for direct rendering on GitHub using GitHub Flavored Markdown.
 
 - Use GitHub Alerts for semantic callouts. Do not emulate notes with bold text, custom blockquote labels, or unsupported admonition syntax.
 - Use fenced `mermaid` blocks for diagrams.
+- Use GFM pipe tables with a header and delimiter row for approved tables. Keep them readable in both rendered and source form.
 - Use GitHub-supported `<details>` and `<summary>` blocks for optional exercises and checkpoint answers.
 - Use GFM footnotes when a citation would interrupt the explanation, and descriptive inline Markdown links when the source name naturally belongs in the sentence.
 - Do not hard-wrap prose. Keep each logical paragraph on one source line; use separate lines only for Markdown structure such as headings, lists, tables, quotes, alerts, code fences, and HTML details blocks.
@@ -360,16 +372,19 @@ Do not format ordinary product documentation, standards pages, or web references
 - Quick and deep are both present and independently navigable.
 - Each page follows its required structure.
 - Every module follows the concrete anchor -> provisional mental model -> core concepts and mechanism -> refined mental model sequence.
-- Every approved concept is explained through connected reasoning steps; definition lists, summaries, analogies, and diagrams are not used as substitutes for explanation.
+- Every approved concept is explained through connected reasoning steps; definition lists, summaries, analogies, diagrams, and tables are not used as substitutes for explanation.
 - Each provisional mental model is mapped to the concrete anchor, revisited after the mechanism, and qualified with its limits.
-- Every quick- and deep-track module follows its approved visual-model decision.
+- Every quick- and deep-track module follows its approved diagram and table decisions.
 - A track README containing instructional module content is validated as a module rather than exempted as an index.
 - Every module marked `Mermaid required` contains a focused Mermaid block in its provisional or refined mental-model section; the topic-root concept map is validated separately and is not counted toward this requirement.
-- Every module marked `Prose only` still fits the prose-only criteria after research and authoring; a qualifying process, structure, flow, dependency, or interaction was not omitted from visualization.
-- Every diagram is introduced and interpreted in prose.
+- Every module marked `No Mermaid` still fits the no-Mermaid criteria after research and authoring; a qualifying process, structure, flow, dependency, or interaction was not omitted from visualization.
+- Every module marked `Table required` contains a focused GFM table near the explanation it supports.
+- Every module marked `No table` still fits the no-table criteria after research and authoring; a useful comparison, mapping, matrix, or structured reference was not omitted.
+- Every diagram and table is introduced and interpreted in prose.
 - Checkpoint answers are supported by the module, and at least one checkpoint applies the refined mental model to a different case.
 - Every checkpoint answer has its own adjacent collapsed section, and practical exercises are collapsed.
 - Mermaid blocks are syntactically valid and readable.
+- GFM tables have valid header and delimiter rows, consistent columns, concise cells, and readable source formatting.
 - GitHub Alerts use supported labels and syntax; footnotes, details blocks, and Markdown links render natively on GitHub.
 - Prose paragraphs are not hard-wrapped.
 - Meaningful factual claims have validated primary sources or labeled fallbacks.
