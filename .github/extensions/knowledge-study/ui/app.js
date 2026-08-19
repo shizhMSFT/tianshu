@@ -186,7 +186,7 @@ function renderResults() {
   const rows = state.mastery.concepts.map((concept) => `
     <li class="concept-row">
       <strong>${escapeHtml(concept.title)}</strong>
-      <span>${concept.correctCount}/${concept.requiredCorrect} 正确</span>
+      <span>${concept.correctCount}/${concept.requiredCorrect} correct</span>
       <span class="status">${escapeHtml(concept.status)}</span>
     </li>`).join("");
   const recommendation = state.recommended;
@@ -194,7 +194,7 @@ function renderResults() {
     <section class="card study-card">
       <p class="eyebrow">Capability map</p>
       <h2>${escapeHtml(recommendation?.title || state.mastery.status)}</h2>
-      <p>${escapeHtml(recommendation?.description || "继续训练以建立稳定掌握度。")}</p>
+      <p>${escapeHtml(recommendation?.description || "Continue training to build stable mastery.")}</p>
       <div class="metrics">
         <div class="metric"><strong>${Math.round(state.mastery.overallScore * 100)}%</strong><span>Current mastery</span></div>
         <div class="metric"><strong>${state.mastery.concepts.filter((concept) => concept.status === "Mastered").length}</strong><span>Capabilities mastered</span></div>
