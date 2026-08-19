@@ -1,6 +1,6 @@
 In this fast-changing world, there are too many stuffs for a person full of curiosity to learn, internalize, and then externalize, given limited time.
 
-Tianshu is a set of skills running in GitHub Copilot app, helping you to
+Tianshu is a set of skills running on GitHub Copilot app, helping you to
 
 - Research and learn domain knowledge with notes written down in a GitHub repository
     - Not just text but tables and diagrams
